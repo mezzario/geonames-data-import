@@ -1,6 +1,6 @@
 # geonames-data-import
 
-Cross-platform console application written in [Node.js](https://nodejs.org/) to automate downloading, unzipping of [GeoNames](http://www.geonames.org/) worldwide geographical database dumps and importing them to database of choice ([MySQL](https://www.mysql.com/) is supported at the moment).
+Cross-platform console application written in [Node.js](https://nodejs.org/) to automate downloading/unzipping of [GeoNames](http://www.geonames.org/) worldwide geographical database [dumps](http://download.geonames.org/export/dump/) and importing them to database of choice ([MySQL](https://www.mysql.com/) is supported at the moment).
 
 ## Demo
 
