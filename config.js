@@ -26,10 +26,10 @@ var config = {
             user: "root",
             password: "root"
         },
-        databaseName: "geonames"
+        databaseName: "geonames" // db name to import data to
     },
     forceDownloading: false,
-    actionIfDbExists: Defs.ClearDbAction.None
+    actionIfDbExists: Defs.ClearDbAction.None // action to perform if DB already exists
 };
 module.exports = config;
 //# sourceMappingURL=config.js.map
