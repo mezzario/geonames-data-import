@@ -20,11 +20,11 @@ git clone https://github.com/mezzario/geonames-data-import.git
 ```
 npm install
 ```
-* Edit `config.js` to adjust configuration, if needed (see below).
+* Edit `src/config.js` to adjust configuration, if needed (see below).
 
 * Run application:
 ```
-node app
+node .
 ```
 
 To automatically run additional SQL queries after import, please refer to file:
@@ -34,7 +34,7 @@ assets/db/<db-engine-name>/post-import.sql
 
 ### Configuration
 
-Edit `config.js` to adjust app's configuration:
+Edit `src/config.js` to adjust app's configuration:
 
 ```js
 {

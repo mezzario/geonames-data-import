@@ -6,6 +6,7 @@ const ClearDbAction = {
 
 const config = {
     baseUrl: "http://download.geonames.org/export", // base URL do download files from
+
     dataFilePaths: [ // list of file paths to download (relative to 'baseUrl')
         "dump/admin1CodesASCII.txt",
         "dump/admin2Codes.txt",
@@ -25,6 +26,7 @@ const config = {
     localDbAssetsDir: "assets/db",    // db queries to create, import or drop data
 
     db: "mysql", // currently selected db to import data to
+
     mysql: { // settings for MySQL db
         connection: { // connection params -> https://github.com/felixge/node-mysql/#connection-options
             host: "127.0.0.1",
@@ -37,7 +39,12 @@ const config = {
     },
 
     forceDownloading: false, // flag to overwrite already downloaded files
-    actionIfDbExists: ClearDbAction.Drop // action to perform if DB already exists
+
+    // action to perform if DB already exists:
+    // - ClearDbAction.None: error will be raised if db exists
+    // - ClearDbAction.Drop: db will be dropped before import
+    // - ClearDbAction.Truncate: all db tables will be truncated
+    actionIfDbExists: ClearDbAction.None
 }
 
 exports.default = config
