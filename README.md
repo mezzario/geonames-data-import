@@ -1,6 +1,6 @@
 # geonames-data-import
 
-Cross-platform console application written in [Node.js](https://nodejs.org/) to automate downloading, unzipping of [GeoNames](http://www.geonames.org/) worldwide geographical database dumps and importing them to database of choice ([MySQL](https://www.mysql.com/) is supported at the moment).
+Cross-platform console application written in [Node.js](https://nodejs.org/) to automate downloading/unzipping of [GeoNames](http://www.geonames.org/) worldwide geographical database [dumps](http://download.geonames.org/export/dump/) and importing them to database of choice ([MySQL](https://www.mysql.com/) is supported at the moment).
 
 ## Demo
 
@@ -70,9 +70,9 @@ Edit `config.js` to adjust app's configuration:
   forceDownloading: false,
 
   // action to perform if DB already exists:
-  // - Defs.ClearDbAction.None: error will be raised if db exists
-  // - Defs.ClearDbAction.Drop: db will be dropped before import
-  // - Defs.ClearDbAction.Truncate: all db tables will be truncated
+  // - ClearDbAction.None: error will be raised if db exists
+  // - ClearDbAction.Drop: db will be dropped before import
+  // - ClearDbAction.Truncate: all db tables will be truncated
   actionIfDbExists: ClearDbAction.None
 }
 ```
