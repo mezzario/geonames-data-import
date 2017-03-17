@@ -1,7 +1,3 @@
-.vs
-bin
-obj
-node_modules
-download
+node_modules/
+download/
 .DS_Store
-.ntvs_analysis.dat

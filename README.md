@@ -20,7 +20,7 @@ git clone https://github.com/mezzario/geonames-data-import.git
 ```
 npm install
 ```
-* Edit `config.ts` (or `config.js`, if [TypeScript](http://www.typescriptlang.org/) is not installed) to adjust configuration, if needed (see below).
+* Edit `config.js` to adjust configuration, if needed (see below).
 
 * Run application:
 ```
@@ -34,9 +34,9 @@ assets/db/<db-engine-name>/post-import.sql
 
 ### Configuration
 
-Edit `config.ts` (`config.js`) to adjust app's configuration:
+Edit `config.js` to adjust app's configuration:
 
-```typescript
+```js
 {
   // base URL do download files from
   baseUrl: "http://download.geonames.org/export",
@@ -73,13 +73,9 @@ Edit `config.ts` (`config.js`) to adjust app's configuration:
   // - Defs.ClearDbAction.None: error will be raised if db exists
   // - Defs.ClearDbAction.Drop: db will be dropped before import
   // - Defs.ClearDbAction.Truncate: all db tables will be truncated
-  actionIfDbExists: Defs.ClearDbAction.None
+  actionIfDbExists: ClearDbAction.None
 }
 ```
-
-## Development
-
-Application developed using [Node.js Tools 1.1 RC for Visual Studio 2015](https://github.com/Microsoft/nodejstools) and [TypeScript](http://www.typescriptlang.org/) [v1.6](http://download.microsoft.com/download/6/D/8/6D8381B0-03C1-4BD2-AE65-30FF0A4C62DA/TS1.6-Beta-D14OOB.23301.00/TypeScript_Full.exe).
 
 ## Credits
 

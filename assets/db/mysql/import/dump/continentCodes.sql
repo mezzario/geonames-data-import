@@ -2,6 +2,6 @@ USE %s;
 
 LOAD DATA LOCAL INFILE '%s'
 INTO TABLE continentCodes
-CHARACTER SET 'UTF8'
+CHARACTER SET 'UTF8MB4'
 FIELDS TERMINATED BY ','
 (code, name, geonameId);
