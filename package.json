@@ -1,57 +1,63 @@
 {
-    "name": "geonames-data-import",
-    "version": "1.0.0",
-    "description": "Cross-platform application to automate downloading of GeoNames database dumps and importing them to MySQL.",
-    "keywords": [
-        "geonames",
-        "geo",
-        "names",
-        "geographical",
-        "country",
-        "countries",
-        "city",
-        "cities",
-        "database",
-        "db",
-        "data",
-        "automate",
-        "automated",
-        "download",
-        "downloading",
-        "import",
-        "importing",
-        "mysql",
-        "node",
-        "nodejs"
-    ],
-    "author": {
-        "name": "Eugene Baranchuk",
-        "email": "vencedor@gmail.com"
-    },
-    "license": "MIT",
-    "homepage": "https://github.com/mezzario/geonames-data-import",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/mezzario/geonames-data-import.git"
-    },
-    "bugs": {
-        "url": "https://github.com/mezzario/geonames-data-import/issues"
-    },
-    "dependencies": {
-        "extend": ">= 3.0.0",
-        "fs-extra": ">= 0.24.0",
-        "moment": ">= 2.10.6",
-        "moment-duration-format": ">= 1.3.0",
-        "mysql": ">= 2.9.0",
-        "status-bar": ">= 2.0.3",
-        "unzip": ">= 0.1.11"
-    },
-    "devDependencies": {
-        "eslint": "^3.17.1",
-        "eslint-plugin-import": "^2.2.0"
-    },
-    "main": "./src/index.js",
-    "engines": {
-        "node": ">= 0.6.x"
-    }
+  "name": "geonames-data-import",
+  "version": "1.0.1",
+  "description": "Cross-platform application to automate downloading of GeoNames database dumps and importing them to MySQL.",
+  "scripts": {
+    "mysql": "docker-compose up",
+    "start": "node .",
+    "clean": "rimraf download mysqldata",
+    "lint": "eslint src"
+  },
+  "keywords": [
+    "geonames",
+    "geo",
+    "names",
+    "geographical",
+    "country",
+    "countries",
+    "city",
+    "cities",
+    "database",
+    "db",
+    "data",
+    "automate",
+    "automated",
+    "download",
+    "downloading",
+    "import",
+    "importing",
+    "mysql",
+    "node",
+    "nodejs"
+  ],
+  "author": {
+    "name": "Eugene Baranchuk",
+    "email": "vencedor@gmail.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/mezzario/geonames-data-import",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mezzario/geonames-data-import.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mezzario/geonames-data-import/issues"
+  },
+  "dependencies": {
+    "extend": "^3.0.2",
+    "fs-extra": "^8.1.0",
+    "moment": "^2.24.0",
+    "moment-duration-format": "^2.3.2",
+    "mysql": "^2.17.1",
+    "status-bar": "^2.0.3",
+    "unzipper": "^0.10.2"
+  },
+  "devDependencies": {
+    "eslint": "^6.1.0",
+    "eslint-plugin-import": "^2.18.2"
+  },
+  "main": "./src/index.js",
+  "engines": {
+    "node": ">= 0.6.x"
+  }
 }

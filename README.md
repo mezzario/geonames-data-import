@@ -10,7 +10,7 @@ _(some large files were omitted)_
 
 ## Usage
 
-* Install [Node.js](https://nodejs.org/en/download/).
+* Install [Node.js](https://nodejs.org/en/download/) and [Docker](https://www.docker.com/products/docker-desktop) (if you plan to run MySQL as a container).
 
 * Clone git repository:
 ```
@@ -18,18 +18,23 @@ git clone https://github.com/mezzario/geonames-data-import.git
 ```
 * From app's folder install node modules:
 ```
-npm install
+npm i
 ```
 * Edit `src/config.js` to adjust configuration, if needed (see below).
 
-* Run application:
+* Start MySQL instance (wait for it to load):
 ```
-node .
+npm run mysql
+```
+
+* Run application in another terminal window:
+```
+npm start
 ```
 
 To automatically run additional SQL queries after import, please refer to file:
 ```
-assets/db/<db-engine-name>/post-import.sql
+assets/db/<db-type>/post-import.sql
 ```
 
 ### Configuration
@@ -53,8 +58,8 @@ Edit `src/config.js` to adjust app's configuration:
   // db queries to create, import or drop data
   localDbAssetsDir: "assets/db",
 
-  // currently selected db to import data to
-  db: "mysql",
+  // currently selected db type to import data to
+  dbType: "mysql",
 
   // settings for MySQL db
   mysql: {
@@ -63,17 +68,17 @@ Edit `src/config.js` to adjust app's configuration:
     connection: {...},
 
     // db name to import data to
-    databaseName: "geonames"
+    databaseName: "geonames",
   },
 
-  // flag to overwrite already downloaded files
+  // set to true to overwrite already downloaded files
   forceDownloading: false,
 
   // action to perform if DB already exists:
   // - ClearDbAction.None: error will be raised if db exists
   // - ClearDbAction.Drop: db will be dropped before import
   // - ClearDbAction.Truncate: all db tables will be truncated
-  actionIfDbExists: ClearDbAction.None
+  actionIfDbExists: ClearDbAction.None,
 }
 ```
 
