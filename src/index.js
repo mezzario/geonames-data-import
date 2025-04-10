@@ -1,268 +1,339 @@
 /* eslint-disable no-console */
 
-const Util = require('util')
-const Extend = require('extend')
-const Http = require('http')
-const Path = require('path')
-const FileSystem = require('fs-extra')
-const Unzipper = require('unzipper')
-const StatusBar = require('status-bar')
-const MySQL = require('mysql')
-const moment = require('moment')
-require('moment-duration-format')
-const ConfigModule = require('./config')
-const Config = ConfigModule.default
-const {ClearDbAction} = ConfigModule
+const util = require('util');
+const http = require('http');
+const path = require('path');
+const fs = require('fs-extra');
+const unzipper = require('unzipper');
+const statusBarModule = require('status-bar');
+const mysql = require('mysql2/promise');
+const moment = require('moment');
+require('moment-duration-format');
+const configModule = require('./config');
+const config = configModule.default;
+const {ClearDbAction} = configModule;
 
-const _startMoment = moment()
-const _baseUrl = Config.baseUrl.replace(/\/+$/, '')
-const _localFileRe = /^local:/
+const _startMoment = moment();
+const _baseUrl = config.baseUrl.replace(/\/+$/, '');
+const _localFileRe = /^local:/;
 
-let _promise = new Promise(resolve => resolve())
-let _downloadsCount = 0
+let _promise = new Promise((resolve) => resolve());
+let _downloadsCount = 0;
 
-console.log('\nDownloading and unzipping files...')
+console.log('\nDownloading and unzipping files...');
 
-for (let i = 0; i < Config.dataFilePaths.length; i++) {
-  let dataFilePath = Config.dataFilePaths[i]
-  const isLocal = dataFilePath.match(_localFileRe)
-  dataFilePath = dataFilePath.replace(_localFileRe, '')
-  const fileSubpath = Path.normalize(dataFilePath)
-  const filePath = Path.join(Config.localDownloadDir, fileSubpath)
-  const localFilePath = isLocal ? Path.join(Config.localDataFilesDir, fileSubpath) : null
+for (let i = 0; i < config.dataFilePaths.length; i++) {
+  let dataFilePath = config.dataFilePaths[i];
+  const isLocal = dataFilePath.match(_localFileRe);
+  dataFilePath = dataFilePath.replace(_localFileRe, '');
+  const fileSubpath = path.normalize(dataFilePath);
+  const filePath = path.join(config.localDownloadDir, fileSubpath);
+  const localFilePath = isLocal
+    ? path.join(config.localDataFilesDir, fileSubpath)
+    : null;
 
-  if (Config.forceDownloading || !FileSystem.existsSync(filePath.replace(/\.\w+$/, '.txt'))) {
+  if (
+    config.forceDownloading ||
+    !fs.existsSync(filePath.replace(/\.\w+$/, '.txt'))
+  ) {
     if (++_downloadsCount === 1) {
-      console.log()
+      console.log();
     }
 
-    if (isLocal) { // file is stored locally: just copy it to downloads dir
+    if (isLocal) {
+      // file is stored locally: just copy it to downloads dir
       ((dataFilePath, localFilePath, filePath) => {
-        _promise = _promise.then(() => new Promise((resolve, reject) => {
-          process.stdout.write(`${dataFilePath}: copying locally...`)
+        _promise = _promise.then(
+          () =>
+            new Promise((resolve, reject) => {
+              process.stdout.write(`${dataFilePath}: copying locally...`);
 
-          FileSystem.copy(localFilePath, filePath, error => {
-            if (error) {
-              console.error(`\n${error}\n`)
-              reject()
-            } else {
-              console.log(' Done.')
-              resolve()
-            }
-          })
-        }))
-      })(dataFilePath, localFilePath, filePath)
-    } else { // download from server
-      (dataFilePath => // storing 'i' in current scope
-        _promise = _promise.then(() => downloadFile(dataFilePath))
-      )(dataFilePath)
+              fs.copy(localFilePath, filePath, (error) => {
+                if (error) {
+                  console.error(`\n${error}\n`);
+                  reject();
+                } else {
+                  console.log(' Done.');
+                  resolve();
+                }
+              });
+            })
+        );
+      })(dataFilePath, localFilePath, filePath);
+    } else {
+      // download from server
+      ((
+        dataFilePath // storing 'i' in current scope
+      ) => (_promise = _promise.then(() => downloadFile(dataFilePath))))(
+        dataFilePath
+      );
     }
   }
 }
 
 _promise.then(() => {
   if (!_downloadsCount) {
-    console.log("All files are already there, skipping (modify 'forceDownloading' in config).")
+    console.log(
+      "All files are already there, skipping (modify 'forceDownloading' in config)."
+    );
   }
 
-  const localDbAssetsDir = Path.join(Config.localDbAssetsDir, Config.dbType)
-  const databaseName = Config[Config.dbType].databaseName
-  const createDbQuery = readQueryFromFile(Path.join(localDbAssetsDir, 'create-db.sql'), databaseName, databaseName)
-  const truncDbQuery = readQueryFromFile(Path.join(localDbAssetsDir, 'trunc-db.sql'), databaseName)
-  const dropDbQuery = readQueryFromFile(Path.join(localDbAssetsDir, 'drop-db.sql'), databaseName)
-  const postImportQuery = readQueryFromFile(Path.join(localDbAssetsDir, 'post-import.sql'))
+  const localDbAssetsDir = path.join(config.localDbAssetsDir, config.dbType);
+  const databaseName = config[config.dbType].databaseName;
+  const createDbQuery = readQueryFromFile(
+    path.join(localDbAssetsDir, 'create-db.sql'),
+    databaseName,
+    databaseName
+  );
+  const truncDbQuery = readQueryFromFile(
+    path.join(localDbAssetsDir, 'trunc-db.sql'),
+    databaseName
+  );
+  const dropDbQuery = readQueryFromFile(
+    path.join(localDbAssetsDir, 'drop-db.sql'),
+    databaseName
+  );
+  const postImportQuery = readQueryFromFile(
+    path.join(localDbAssetsDir, 'post-import.sql')
+  );
 
-  if (Config.dbType === 'mysql') {
-    let databaseExists
-
+  if (config.dbType === 'mysql') {
+    let databaseExists;
     _promise = _promise.then(() =>
-      runMySqlQuery(`show databases like '${databaseName}'`)
-        .then(o => databaseExists = !!o.rows.length)
-    )
+      runMySqlQuery(`show databases like '${databaseName}'`).then(
+        (o) => (databaseExists = !!o.rows.length)
+      )
+    );
 
     _promise.then(() => {
-      _promise.then(() => console.log())
-
+      _promise.then(() => console.log());
       if (databaseExists) {
-        switch (Config.actionIfDbExists) {
-          case ClearDbAction.Truncate: _promise = _promise.then(() => runMySqlQuery(truncDbQuery, `Database '${databaseName}' exists, truncating it...`)); break
-          case ClearDbAction.Drop:     _promise = _promise.then(() => runMySqlQuery(dropDbQuery,  `Database '${databaseName}' exists, dropping it...`));   break
+        switch (config.actionIfDbExists) {
+          case ClearDbAction.Truncate:
+            _promise = _promise.then(() =>
+              runMySqlQuery(
+                truncDbQuery,
+                `Database '${databaseName}' exists, truncating it...`
+              )
+            );
+            break;
+          case ClearDbAction.Drop:
+            _promise = _promise.then(() =>
+              runMySqlQuery(
+                dropDbQuery,
+                `Database '${databaseName}' exists, dropping it...`
+              )
+            );
+            break;
         }
       }
 
-      if (!databaseExists || Config.actionIfDbExists === ClearDbAction.Drop) {
-        _promise = _promise.then(() => runMySqlQuery(createDbQuery, `Creating database '${databaseName}'...`))
+      if (!databaseExists || config.actionIfDbExists === ClearDbAction.Drop) {
+        _promise = _promise.then(() =>
+          runMySqlQuery(createDbQuery, `Creating database '${databaseName}'...`)
+        );
       }
 
-      if (databaseExists && Config.actionIfDbExists === ClearDbAction.None) {
-        _promise.then(() => console.log("Database exists, skipping import (modify 'actionIfDbExists' in config).\n"))
+      if (databaseExists && config.actionIfDbExists === ClearDbAction.None) {
+        _promise.then(() =>
+          console.log(
+            "Database exists, skipping import (modify 'actionIfDbExists' in config).\n"
+          )
+        );
       } else {
-        _promise.then(() => console.log())
+        _promise.then(() => console.log());
 
-        const filePaths = getFilePathsRecursively(Path.normalize(Config.localDownloadDir))
-          .filter(s => /\.txt$/i.test(s))
+        const filePaths = getFilePathsRecursively(
+          path.normalize(config.localDownloadDir)
+        ).filter((s) => /\.txt$/i.test(s));
 
         for (let i = 0; i < filePaths.length; i++) {
-          const filePath = filePaths[i].replace(/^[/\\]+/, '').replace(/[/\\]+$/, '')
-          const fileSubpath = filePath.substr(Config.localDownloadDir.replace(/^[/\\]+/, '').replace(/[/\\]+$/, '').length).replace(/^[/\\]+/, '')
-          const importQueryPath = Path.join(localDbAssetsDir, 'import', fileSubpath.replace(/\.\w+$/, '.sql'))
-          const query = Util.format(FileSystem.readFileSync(importQueryPath, 'UTF8'), databaseName, filePath);
+          const filePath = filePaths[i]
+            .replace(/^[/\\]+/, '')
+            .replace(/[/\\]+$/, '');
+          const fileSubpath = filePath
+            .substr(
+              config.localDownloadDir
+                .replace(/^[/\\]+/, '')
+                .replace(/[/\\]+$/, '').length
+            )
+            .replace(/^[/\\]+/, '');
+          const importQueryPath = path.join(
+            localDbAssetsDir,
+            'import',
+            fileSubpath.replace(/\.\w+$/, '.sql')
+          );
+
+          // Use the original absolute file path directly, not path.resolve which might be causing issues
+          const absoluteFilePath = filePaths[i].replace(/\\/g, '/');
+
+          const query = util.format(
+            fs.readFileSync(importQueryPath, 'UTF8'),
+            databaseName,
+            absoluteFilePath
+          );
 
           ((query, filePath) =>
-            _promise = _promise.then(() => runMySqlQuery(query, `Importing file '${filePath}'...`))
-          )(query, filePath)
+            (_promise = _promise.then(() =>
+              runMySqlQuery(query, `Importing file '${filePath}'...`)
+            )))(query, filePath);
 
           if (i === filePaths.length - 1) {
-            _promise.then(() => console.log())
+            _promise.then(() => console.log());
           }
         }
 
         if (postImportQuery) {
-          _promise = _promise.then(() => runMySqlQuery(`use ${databaseName};\n${postImportQuery}`, 'Running post import query...'))
-          _promise.then(() => console.log())
+          _promise = _promise.then(() =>
+            runMySqlQuery(
+              `use ${databaseName};\n${postImportQuery}`,
+              'Running post import query...'
+            )
+          );
+          _promise.then(() => console.log());
         }
       }
 
-      _promise.then(() => console.log(`All operations completed in ${durationSince(_startMoment) }.\n`))
-    })
+      _promise.then(() =>
+        console.log(
+          `All operations completed in ${durationSince(_startMoment)}.\n`
+        )
+      );
+    });
   }
-})
+});
 
 function downloadFile(fileUrlSubpath) {
   return new Promise((resolve, reject) => {
-    fileUrlSubpath = fileUrlSubpath.replace(/^\/+/, '')
+    fileUrlSubpath = fileUrlSubpath.replace(/^\/+/, '');
 
-    const fileUrl = `${_baseUrl}/${fileUrlSubpath}`
-    const fileSubpath = Path.normalize(fileUrlSubpath)
-    const fileDir = Path.join(Config.localDownloadDir, Path.dirname(fileSubpath))
-    const fileName = Path.basename(fileSubpath)
-    const filePath = Path.join(fileDir, fileName)
-    let statusBar
+    const fileUrl = `${_baseUrl}/${fileUrlSubpath}`;
+    const fileSubpath = path.normalize(fileUrlSubpath);
+    const fileDir = path.join(
+      config.localDownloadDir,
+      path.dirname(fileSubpath)
+    );
+    const fileName = path.basename(fileSubpath);
+    const filePath = path.join(fileDir, fileName);
+    let statusBar;
 
     const handleError = (error) => {
       if (statusBar) {
-        statusBar.cancel()
+        statusBar.cancel();
       }
+      console.error(`\n${error}`);
+      reject();
+    };
 
-      console.error(`\n${error}`)
-      reject()
-    }
-
-    Http.get(fileUrl, response => {
-      if (response.statusCode === 200) {
-        if (fileDir) {
-          FileSystem.ensureDirSync(fileDir)
-        }
-
-        statusBar = StatusBar.create({total: response.headers['content-length']})
-          .on('render', stats => {
-            process.stdout.write(
-              (fileName => {
-                const filenameMaxLength = process.stdout.columns - 1 - 59
-                if (fileName.length > filenameMaxLength) {
-                  fileName = fileName.slice(0, filenameMaxLength - 3) + '...'
-                } else {
-                  let remaining = filenameMaxLength - fileName.length
-                  while (remaining--) {
-                    fileName += ' '
-                  }
+    http
+      .get(fileUrl, (response) => {
+        if (response.statusCode === 200) {
+          if (fileDir) {
+            fs.ensureDirSync(fileDir);
+          }
+          statusBar = statusBarModule
+            .create({
+              total: response.headers['content-length'],
+            })
+            .on('render', (stats) => {
+              let fileName = fileUrlSubpath;
+              const filenameMaxLength = process.stdout.columns - 1 - 59;
+              if (fileName.length > filenameMaxLength) {
+                fileName = fileName.slice(0, filenameMaxLength - 3) + '...';
+              } else {
+                let remaining = filenameMaxLength - fileName.length;
+                while (remaining--) {
+                  fileName += ' ';
                 }
-                return fileName
-              })(fileUrlSubpath)
-                + ' ' + statusBar.format.storage(stats.currentSize)
-                + ' ' + statusBar.format.speed(stats.speed)
-                + ' ' + statusBar.format.time(stats.remainingTime)
-                + ' [' + statusBar.format.progressBar(stats.percentage) + '] '
-                + statusBar.format.percentage(stats.percentage)
-            )
+              }
+              const size = statusBar.format.storage(stats.currentSize);
+              const speed = statusBar.format.speed(stats.speed);
+              const time = statusBar.format.time(stats.remainingTime);
+              const progress = statusBar.format.progressBar(stats.percentage);
+              const percent = statusBar.format.percentage(stats.percentage);
+              process.stdout.write(
+                `${fileName} ${size} ${speed} ${time} [${progress}] ${percent}`
+              );
+              process.stdout.cursorTo(0);
+            })
+            .on('finish', () => {
+              console.log('');
+              resolve();
+            });
 
-            process.stdout.cursorTo(0)
-          })
-          .on('finish', () => {
-            console.log('')
-
-            resolve()
-          })
-
-        response.pipe(statusBar)
-
-        response.pipe(Path.extname(fileName).toLowerCase() !== '.zip'
-          ? FileSystem.createWriteStream(filePath)
-          : Unzipper.Extract({path: fileDir}))
-      } else {
-        handleError(`${fileUrlSubpath}: server returned ${response.statusCode}, aborting.`)
-      }
-    }).on('error', handleError)
-  })
+          response.pipe(statusBar);
+          response.pipe(
+            path.extname(fileName).toLowerCase() !== '.zip'
+              ? fs.createWriteStream(filePath)
+              : unzipper.Extract({path: fileDir})
+          );
+        } else {
+          handleError(
+            `${fileUrlSubpath}: server returned ${response.statusCode}, aborting.`
+          );
+        }
+      })
+      .on('error', handleError);
+  });
 }
 
 function readQueryFromFile(fileName, ...args) {
-  const fileExists = FileSystem.existsSync(fileName)
-  let query = fileExists ? FileSystem.readFileSync(fileName, 'UTF8').trim() : ''
-
+  const fileExists = fs.existsSync(fileName);
+  let query = fileExists ? fs.readFileSync(fileName, 'UTF8').trim() : '';
   if (query && args.length) {
-    query = Util.format.apply(Util, [query].concat(args))
+    query = util.format.apply(util, [query].concat(args));
   }
-
-  return query
+  return query;
 }
 
-function runMySqlQuery(query, message) {
-  return new Promise((resolve, reject) => {
+async function runMySqlQuery(query, message) {
+  if (message) {
+    process.stdout.write(message);
+  }
+  const opMoment = moment();
+  const connection = await mysql.createConnection({
+    multipleStatements: true,
+    ...config.mysql.connection,
+    infileStreamFactory: (path) => fs.createReadStream(path),
+  });
+
+  try {
+    const [rows, fields] = await connection.query(query);
     if (message) {
-      process.stdout.write(message)
+      console.log(` Done in ${durationSince(opMoment)}.`);
     }
-
-    const opMoment = moment()
-    const connection = MySQL.createConnection(Extend(true, {multipleStatements: true}, Config.mysql.connection))
-
-    connection.connect()
-
-    connection.query(query, (error, rows, fields) => {
-      if (!error) {
-        if (message) {
-          console.log(` Done in ${durationSince(opMoment) }.`)
-        }
-
-        resolve({rows, fields})
-      } else {
-        if (message) {
-          console.log(' Failed.')
-        }
-
-        console.error(`\n${error}\n`)
-        reject()
-      }
-    })
-
-    connection.end()
-  })
+    await connection.end();
+    return {rows, fields};
+  } catch (error) {
+    if (message) {
+      console.log(' Failed.');
+    }
+    console.error(`\n${error}\n`);
+    await connection.end();
+    throw error;
+  }
 }
 
 function getFilePathsRecursively(dir) {
-  let filePaths = []
-
-  const walk = dir => {
-    const files = FileSystem.readdirSync(dir)
-
-    files.forEach(name => {
-      const path = Path.join(dir, name)
-
-      if (FileSystem.statSync(path).isDirectory()) {
-        filePaths = walk(path)
+  let filePaths = [];
+  const walk = (dirPath) => {
+    const files = fs.readdirSync(dirPath);
+    files.forEach((name) => {
+      const filePath = path.join(dirPath, name);
+      if (fs.statSync(filePath).isDirectory()) {
+        walk(filePath);
       } else {
-        filePaths.push(path)
+        filePaths.push(filePath);
       }
-    })
-
-    return filePaths
-  }
-
-  walk(dir)
-
-  return filePaths
+    });
+    return filePaths;
+  };
+  walk(dir);
+  return filePaths;
 }
 
 function durationSince(m) {
-  return moment.duration(moment().diff(m)).format('y[y] M[mo] d[d] h[h] m[m] s[s]')
+  return moment
+    .duration(moment().diff(m))
+    .format('y[y] M[mo] d[d] h[h] m[m] s[s]');
 }

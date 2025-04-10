@@ -1,9 +1,16 @@
-mysql:
-  image: mysql:5.6
-  ports:
-    - 3306:3306
-  volumes:
-    # persist db in a shared volume
-    - ./mysqldata:/var/lib/mysql:rw,delegated
-  environment:
-    - MYSQL_ROOT_PASSWORD=root
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:9.2
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysqldata:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASS}
+    command: --local-infile=1
+    restart: unless-stopped
+
+volumes:
+  mysqldata:
