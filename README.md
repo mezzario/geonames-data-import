@@ -1,6 +1,6 @@
 # geonames-data-import
 
-Cross-platform console application written in [Node.js](https://nodejs.org/) to automate downloading/unzipping of [GeoNames](http://www.geonames.org/) worldwide geographical database [dumps](http://download.geonames.org/export/dump/) and importing them to database of choice ([MySQL](https://www.mysql.com/) is supported at the moment).
+Cross-platform console application written in [TypeScript](https://www.typescriptlang.org/) and [Node.js](https://nodejs.org/) to automate downloading/unzipping of [GeoNames](http://www.geonames.org/) worldwide geographical database [dumps](http://download.geonames.org/export/dump/) and importing them to database of choice ([MySQL](https://www.mysql.com/) is supported at the moment).
 
 ## Demo
 
@@ -10,39 +10,53 @@ _(some large files were omitted)_
 
 ## Usage
 
-* Install [Node.js](https://nodejs.org/en/download/) and [Docker](https://www.docker.com/products/docker-desktop) (if you plan to run MySQL as a container).
+- Install [Node.js](https://nodejs.org/en/download/) and [Docker](https://www.docker.com/products/docker-desktop) (if you plan to run MySQL as a container).
 
-* Clone git repository:
+- Clone git repository:
+
 ```
 git clone https://github.com/mezzario/geonames-data-import.git
 ```
-* From app's folder install node modules:
+
+- From app's folder install node modules:
+
 ```
 npm i
 ```
-* Edit `src/config.js` to adjust configuration, if needed (see below).
 
-* Start MySQL instance (wait for it to load):
+- Edit `src/config.ts` to adjust configuration, if needed (see below).
+
+- Configure your MySQL credentials in `.env` file:
+
+```
+MYSQL_USER=root
+MYSQL_PASS=your_password
+```
+
+- Start MySQL instance (wait for it to load):
+
 ```
 npm run mysql
 ```
 
-* Run application in another terminal window:
+- Run application in another terminal window:
+
 ```
 npm start
 ```
 
 To automatically run additional SQL queries after import, please refer to file:
+
 ```
 assets/db/<db-type>/post-import.sql
 ```
 
 ### Configuration
 
-Edit `src/config.js` to adjust app's configuration:
+Edit `src/config.ts` to adjust app's configuration:
 
-```js
-{
+```typescript
+const config: Config = {
   // base URL do download files from
   baseUrl: "http://download.geonames.org/export",
 
@@ -63,9 +77,13 @@ Edit `src/config.js` to adjust app's configuration:
 
   // settings for MySQL db
   mysql: {
-    // connection params; please see complete list of options here:
-    // https://github.com/felixge/node-mysql/#connection-options
-    connection: {...},
+    // connection params
+    connection: {
+      host: "127.0.0.1",
+      port: "3306",
+      user: process.env.MYSQL_USER || "root",
+      password: process.env.MYSQL_PASS || "root",
+    },
 
     // db name to import data to
     databaseName: "geonames",
@@ -82,7 +100,21 @@ Edit `src/config.js` to adjust app's configuration:
 }
 ```
 
+## Development
+
+- Build the project:
+
+```
+npm run build
+```
+
+- Watch for changes and rebuild automatically:
+
+```
+npm run dev
+```
+
 ## Credits
 
-* [GeoNames-MySQL-DataImport](https://github.com/codigofuerte/GeoNames-MySQL-DataImport) for basic SQL scripts;
-* [node-status-bar](https://github.com/gagle/node-status-bar) for great status bar on long-running operations.
+- [GeoNames-MySQL-DataImport](https://github.com/codigofuerte/GeoNames-MySQL-DataImport) for basic SQL scripts;
+- [node-status-bar](https://github.com/gagle/node-status-bar) for great status bar on long-running operations.

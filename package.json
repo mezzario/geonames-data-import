@@ -4,9 +4,11 @@
   "description": "Cross-platform application to automate downloading of GeoNames database dumps and importing them to MySQL.",
   "scripts": {
     "mysql": "docker-compose up",
-    "start": "node .",
-    "clean": "rimraf download mysqldata",
-    "lint": "eslint src"
+    "start": "npm run build && node dist/index.js",
+    "clean": "rimraf download mysqldata dist",
+    "lint": "eslint src",
+    "build": "tsc",
+    "dev": "tsc --watch"
   },
   "keywords": [
     "geonames",
@@ -44,20 +46,28 @@
     "url": "https://github.com/mezzario/geonames-data-import/issues"
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
+    "extend": "^3.0.2",
     "fs-extra": "^11.3.0",
     "moment": "^2.30.1",
     "moment-duration-format": "^2.3.2",
-    "mysql2": "^3.14.0",
+    "mysql2": "^3.11.0",
     "status-bar": "^2.0.3",
     "unzipper": "^0.12.3"
   },
   "devDependencies": {
-    "dotenv": "^16.4.7",
+    "@types/extend": "^3.0.4",
+    "@types/fs-extra": "^11.0.4",
+    "@types/mysql": "^2.15.26",
+    "@types/node": "^20.12.2",
+    "@types/unzipper": "^0.10.11",
     "eslint": "^9.24.0",
-    "eslint-plugin-import": "^2.31.0"
+    "eslint-plugin-import": "^2.31.0",
+    "rimraf": "^5.0.6",
+    "typescript": "^5.4.5"
   },
-  "main": "./src/index.js",
+  "main": "./dist/index.js",
   "engines": {
-    "node": ">= 0.6.x"
+    "node": ">= 14.x"
   }
 }
