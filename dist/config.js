@@ -22,15 +22,15 @@ const config = {
     dataFilePaths: [
         'dump/admin1CodesASCII.txt',
         'dump/admin2Codes.txt',
-        // 'dump/allCountries.zip',
-        // 'dump/alternateNames.zip',
+        'dump/allCountries.zip',
+        'dump/alternateNames.zip',
         'local:dump/continentCodes.txt',
         'dump/countryInfo.txt',
         'dump/featureCodes_en.txt',
         'dump/hierarchy.zip',
         'dump/iso-languagecodes.txt',
         'dump/timeZones.txt',
-        // 'zip/allCountries.zip',
+        'zip/allCountries.zip',
     ],
     /** Directory where files will be downloaded. */
     localDownloadDir: 'download',
@@ -54,7 +54,7 @@ const config = {
     /** Flag to overwrite already downloaded files. */
     forceDownloading: false,
     /** Action to perform if DB already exists. */
-    actionIfDbExists: ClearDbAction.Drop,
+    actionIfDbExists: ClearDbAction.None,
 };
 exports.default = config;
 //# sourceMappingURL=config.js.map

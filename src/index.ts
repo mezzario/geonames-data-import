@@ -230,9 +230,7 @@ async function downloadFile(
     let statusBar: StatusBarType;
 
     const handleError = (error: Error): void => {
-      if (statusBar) {
-        statusBar.cancel();
-      }
+      statusBar?.cancel();
       console.error(`\n${error}`);
       reject(error);
     };
@@ -286,8 +284,8 @@ async function downloadFile(
         const isZip = path.extname(fileName).toLowerCase() === '.zip';
         response.pipe(
           isZip
-            ? unzipper.Extract({path: fileDir})
-            : fs.createWriteStream(filePath)
+            ? unzipper.Extract({path: fileDir}).on('error', handleError)
+            : fs.createWriteStream(filePath).on('error', handleError)
         );
       });
 
@@ -299,10 +297,10 @@ async function downloadFile(
 }
 
 function readQueryFromFile(fileName: string, ...args: string[]): string {
-  const fileExists = fs.existsSync(fileName);
-  let query = fileExists
-    ? fs.readFileSync(fileName, {encoding: 'utf8'}).trim()
-    : '';
+  if (!fs.existsSync(fileName)) {
+    throw new Error(`SQL file not found: ${fileName}`);
+  }
+  let query = fs.readFileSync(fileName, {encoding: 'utf8'}).trim();
   if (query && args.length) {
     query = util.format.apply(util, [query].concat(args));
   }
@@ -316,31 +314,27 @@ async function runMySqlQuery(
   if (message) {
     process.stdout.write(message);
   }
-
   const opMoment = moment();
-
   const connectionOptions = {
     ...config.mysql.connection,
     multipleStatements: true,
     infileStreamFactory: (path: string) => fs.createReadStream(path),
   };
-
   const connection = await mysql.createConnection(connectionOptions);
-
   try {
     const [rows, fields] = await connection.query(query);
     if (message) {
       console.log(` Done in ${durationSince(opMoment)}.`);
     }
-    await connection.end();
     return {rows: rows as any[], fields: fields as any[]};
   } catch (error) {
     if (message) {
       console.log(' Failed.');
     }
     console.error(`\n${error}\n`);
-    await connection.end();
     throw error;
+  } finally {
+    await connection.end();
   }
 }
 

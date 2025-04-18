@@ -179,9 +179,7 @@ async function downloadFile(fileUrlSubpath, baseUrl) {
     return new Promise((resolve, reject) => {
         let statusBar;
         const handleError = (error) => {
-            if (statusBar) {
-                statusBar.cancel();
-            }
+            statusBar?.cancel();
             console.error(`\n${error}`);
             reject(error);
         };
@@ -223,8 +221,8 @@ async function downloadFile(fileUrlSubpath, baseUrl) {
                 // Determine if we should extract or save directly.
                 const isZip = path.extname(fileName).toLowerCase() === '.zip';
                 response.pipe(isZip
-                    ? unzipper.Extract({ path: fileDir })
-                    : fs.createWriteStream(filePath));
+                    ? unzipper.Extract({ path: fileDir }).on('error', handleError)
+                    : fs.createWriteStream(filePath).on('error', handleError));
             });
             request.on('error', handleError);
         }
@@ -234,10 +232,10 @@ async function downloadFile(fileUrlSubpath, baseUrl) {
     });
 }
 function readQueryFromFile(fileName, ...args) {
-    const fileExists = fs.existsSync(fileName);
-    let query = fileExists
-        ? fs.readFileSync(fileName, { encoding: 'utf8' }).trim()
-        : '';
+    if (!fs.existsSync(fileName)) {
+        throw new Error(`SQL file not found: ${fileName}`);
+    }
+    let query = fs.readFileSync(fileName, { encoding: 'utf8' }).trim();
     if (query && args.length) {
         query = util.format.apply(util, [query].concat(args));
     }
@@ -259,7 +257,6 @@ async function runMySqlQuery(query, message) {
         if (message) {
             console.log(` Done in ${durationSince(opMoment)}.`);
         }
-        await connection.end();
         return { rows: rows, fields: fields };
     }
     catch (error) {
@@ -267,8 +264,10 @@ async function runMySqlQuery(query, message) {
             console.log(' Failed.');
         }
         console.error(`\n${error}\n`);
-        await connection.end();
         throw error;
+    }
+    finally {
+        await connection.end();
     }
 }
 function getFilePathsRecursively(dir) {
