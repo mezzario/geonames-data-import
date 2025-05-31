@@ -18,10 +18,15 @@ var ClearDbAction;
 const config = {
     /** Base URL to download files from. */
     baseUrl: 'http://download.geonames.org/export',
-    /** List of file paths to download (relative to 'baseUrl'). */
+    /**
+     * List of file paths to download (relative to `baseUrl`).
+     * Files prefixed with 'local:' will be sourced from `localDataFilesDir`
+     * instead of being downloaded from the 'baseUrl'.
+     */
     dataFilePaths: [
         'dump/admin1CodesASCII.txt',
         'dump/admin2Codes.txt',
+        // Complete dataset.
         'dump/allCountries.zip',
         'dump/alternateNames.zip',
         'local:dump/continentCodes.txt',
@@ -30,6 +35,10 @@ const config = {
         'dump/hierarchy.zip',
         'dump/iso-languagecodes.txt',
         'dump/timeZones.txt',
+        // Smaller, potentially summarized or differently structured version of
+        // "allCountries.zip". This is a different file from
+        // 'dump/allCountries.zip' above - both are intentionally included.
+        // See http://download.geonames.org/export/zip/readme.txt for more details.
         'zip/allCountries.zip',
     ],
     /** Directory where files will be downloaded. */

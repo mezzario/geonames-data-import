@@ -227,13 +227,23 @@ async function downloadFile(
   const filePath = path.join(fileDir, fileName);
 
   return new Promise<void>((resolve, reject) => {
+    let completed = false;
     let statusBar: StatusBarType;
 
-    const handleError = (error: Error): void => {
-      statusBar?.cancel();
-      console.error(`\n${error}`);
-      reject(error);
+    const completeOnce = (fn: () => void) => {
+      if (!completed) {
+        completed = true;
+        fn();
+      }
     };
+
+    const resolveOnce = () => completeOnce(resolve);
+    const rejectOnce = (error: Error) =>
+      completeOnce(() => {
+        statusBar?.cancel();
+        console.error(`\n${error}`);
+        reject(error);
+      });
 
     try {
       // Ensure directory exists.
@@ -243,7 +253,7 @@ async function downloadFile(
 
       const request = http.get(fileUrl, (response) => {
         if (response.statusCode !== 200) {
-          handleError(
+          rejectOnce(
             new Error(
               `${fileUrlSubpath}: server returned ${response.statusCode}, aborting.`
             )
@@ -275,7 +285,7 @@ async function downloadFile(
           })
           .on('finish', () => {
             console.log();
-            resolve();
+            resolveOnce();
           }) as StatusBarType;
 
         response.pipe(statusBar as any);
@@ -284,14 +294,14 @@ async function downloadFile(
         const isZip = path.extname(fileName).toLowerCase() === '.zip';
         response.pipe(
           isZip
-            ? unzipper.Extract({path: fileDir}).on('error', handleError)
-            : fs.createWriteStream(filePath).on('error', handleError)
+            ? unzipper.Extract({path: fileDir}).on('error', rejectOnce)
+            : fs.createWriteStream(filePath).on('error', rejectOnce)
         );
       });
 
-      request.on('error', handleError);
+      request.on('error', rejectOnce);
     } catch (error) {
-      handleError(error as Error);
+      rejectOnce(error as Error);
     }
   });
 }

@@ -177,12 +177,20 @@ async function downloadFile(fileUrlSubpath, baseUrl) {
     const fileName = path.basename(fileSubpath);
     const filePath = path.join(fileDir, fileName);
     return new Promise((resolve, reject) => {
+        let completed = false;
         let statusBar;
-        const handleError = (error) => {
+        const completeOnce = (fn) => {
+            if (!completed) {
+                completed = true;
+                fn();
+            }
+        };
+        const resolveOnce = () => completeOnce(resolve);
+        const rejectOnce = (error) => completeOnce(() => {
             statusBar?.cancel();
             console.error(`\n${error}`);
             reject(error);
-        };
+        });
         try {
             // Ensure directory exists.
             if (fileDir) {
@@ -190,7 +198,7 @@ async function downloadFile(fileUrlSubpath, baseUrl) {
             }
             const request = http.get(fileUrl, (response) => {
                 if (response.statusCode !== 200) {
-                    handleError(new Error(`${fileUrlSubpath}: server returned ${response.statusCode}, aborting.`));
+                    rejectOnce(new Error(`${fileUrlSubpath}: server returned ${response.statusCode}, aborting.`));
                     return;
                 }
                 statusBar = statusBarModule
@@ -215,19 +223,19 @@ async function downloadFile(fileUrlSubpath, baseUrl) {
                 })
                     .on('finish', () => {
                     console.log();
-                    resolve();
+                    resolveOnce();
                 });
                 response.pipe(statusBar);
                 // Determine if we should extract or save directly.
                 const isZip = path.extname(fileName).toLowerCase() === '.zip';
                 response.pipe(isZip
-                    ? unzipper.Extract({ path: fileDir }).on('error', handleError)
-                    : fs.createWriteStream(filePath).on('error', handleError));
+                    ? unzipper.Extract({ path: fileDir }).on('error', rejectOnce)
+                    : fs.createWriteStream(filePath).on('error', rejectOnce));
             });
-            request.on('error', handleError);
+            request.on('error', rejectOnce);
         }
         catch (error) {
-            handleError(error);
+            rejectOnce(error);
         }
     });
 }
